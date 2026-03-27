@@ -107,6 +107,157 @@ The application is fully responsive with:
 - Flexible grid layouts using Tailwind CSS utilities
 - Touch-friendly interface elements
 
+## Deployment Guides
+
+### Option 1: Deploy to Vercel (Recommended)
+
+**Benefits**: Zero-config deployment, automatic HTTPS, global CDN, environment variables management, automatic previews for PRs.
+
+#### Steps:
+1. **Push to GitHub** (Already done ✓)
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+2. **Connect to Vercel**:
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your GitHub repository
+   - Select `TechSphere` repository
+   - Vercel automatically detects Vite configuration
+
+3. **Configure Environment Variables** (if needed):
+   - In Vercel Dashboard → Project Settings → Environment Variables
+   - Add `VITE_API_URL` pointing to your backend API
+   - Example: `https://api.techsphere.com`
+
+4. **Deploy**:
+   - Click "Deploy"
+   - Your site will be live at `https://<project-name>.vercel.app`
+
+5. **Connect Custom Domain** (Optional):
+   - In Vercel Dashboard → Domains
+   - Add your custom domain (e.g., `techsphere.com`)
+   - Update DNS records as instructed
+
+#### Auto-Deployment:
+- Any push to `main` branch automatically triggers deployment
+- Preview deployments created for pull requests
+
+### Option 2: Deploy to Netlify
+
+**Benefits**: Simple setup, great free tier, built-in functions, form handling, split testing.
+
+#### Steps:
+1. **Connect Netlify to GitHub**:
+   - Go to [netlify.com](https://netlify.com)
+   - Click "Add new site" → "Import an existing project"
+   - Select GitHub and authorize
+   - Choose `TechSphere` repository
+
+2. **Configure Build Settings**:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+   - Node version: `18.x`
+
+3. **Add Redirects** (for React Router):
+   - Create `public/_redirects` file:
+     ```
+     /* /index.html 200
+     ```
+   - Or add to `netlify.toml`:
+     ```toml
+     [[redirects]]
+       from = "/*"
+       to = "/index.html"
+       status = 200
+     ```
+
+4. **Deploy**:
+   - Click "Deploy site"
+   - Your site will be live at `https://<site-name>.netlify.app`
+
+### Option 3: Deploy to GitHub Pages
+
+**Benefits**: Free hosting directly from GitHub, no external services needed.
+
+#### Steps:
+1. **Update `package.json`**:
+   ```json
+   "homepage": "https://yourusername.github.io/TechSphere"
+   ```
+
+2. **Install gh-pages**:
+   ```bash
+   npm install --save-dev gh-pages
+   ```
+
+3. **Add deploy scripts** to `package.json`:
+   ```json
+   "scripts": {
+     "predeploy": "npm run build",
+     "deploy": "gh-pages -d dist"
+   }
+   ```
+
+4. **Deploy**:
+   ```bash
+   npm run deploy
+   ```
+
+### Option 4: Manual Deployment (AWS S3 + CloudFront)
+
+**Benefits**: Maximum control, scalable, cost-effective for high traffic.
+
+#### Steps:
+1. **Build the project**:
+   ```bash
+   npm run build
+   ```
+
+2. **Create S3 bucket** and enable static website hosting
+
+3. **Upload `dist` folder** to S3
+
+4. **Create CloudFront distribution** pointing to S3
+
+5. **Configure custom domain** via Route53
+
+### Environment Variables for API Integration
+
+Create `.env.local` file in project root:
+```env
+VITE_API_URL=https://your-api-domain.com
+VITE_APP_ENV=production
+```
+
+Access in your code:
+```typescript
+const apiUrl = import.meta.env.VITE_API_URL;
+```
+
+### Pre-Deployment Checklist
+
+- [ ] Run `npm run build` successfully
+- [ ] Run `npm run lint` with no errors
+- [ ] Test on multiple devices using DevTools
+- [ ] Check Core Web Vitals using PageSpeed Insights
+- [ ] Verify all routes work correctly
+- [ ] Set up environment variables on hosting platform
+- [ ] Configure CORS if backend is on different domain
+- [ ] Test form submissions and API calls
+- [ ] Verify SSL certificate is active
+- [ ] Set up monitoring and error tracking (e.g., Sentry)
+
+### Monitoring & Analytics
+
+After deployment, set up:
+- **Google Analytics**: Track user behavior
+- **Sentry**: Monitor errors and performance
+- **Datadog or New Relic**: Application performance monitoring
+
 ## Browser Support
 
 - Chrome 90+
