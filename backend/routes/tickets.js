@@ -8,8 +8,8 @@ router.use(protect);
 
 // ─── POST /api/tickets ────────────────────────────────────────────────────────
 // @desc    Submit a new support ticket
-// @access  Private (Client only)
-router.post('/', authorize('Client'), async (req, res, next) => {
+// @access  Private (All authenticated users)
+router.post('/', async (req, res, next) => {
   try {
     // Attach the logged-in user's ID as the ticket owner
     req.body.userId = req.user.id;
