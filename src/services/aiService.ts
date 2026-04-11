@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_API_URL = import.meta.env.VITE_GROQ_API_URL;
 
 const SYSTEM_PROMPT = `
 You are TechSphere's virtual assistant. You are helpful, professional, and knowledgeable about IT and SaaS-related queries.

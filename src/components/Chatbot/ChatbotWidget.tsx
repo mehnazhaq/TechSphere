@@ -83,7 +83,7 @@ const ChatbotWidget: React.FC = () => {
       if (!token) throw new Error('You must be logged in to create a ticket.');
 
       const response = await axios.post(
-        'http://localhost:5000/api/tickets',
+        `${import.meta.env.VITE_API_URL}/tickets`,
         {
           title: 'Automated Ticket from Chat Assistant',
           description: `User requested help via AI Chat. Conversation snippet: ${messages.slice(-3).map(m => m.text).join(' | ')}`,
