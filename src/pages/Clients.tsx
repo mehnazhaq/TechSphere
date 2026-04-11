@@ -1,29 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
-interface Client {
+interface User {
   _id: string;
   name: string;
   email: string;
-  company: string;
-  contactNumber: string;
-  planType: string;
-  subscriptionStatus: string;
-  address?: string;
+  role: string;
   createdAt: string;
 }
 
 interface NewClientForm {
   name: string;
   email: string;
-  company: string;
-  contactNumber: string;
-  planType: string;
-  subscriptionStatus: string;
-  address: string;
+  password: string;
+  role: string;
 }
 
 const Clients: React.FC = () => {
-  const [clients, setClients] = useState<Client[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,20 +25,17 @@ const Clients: React.FC = () => {
   const [formData, setFormData] = useState<NewClientForm>({
     name: '',
     email: '',
-    company: '',
-    contactNumber: '',
-    planType: 'Basic',
-    subscriptionStatus: 'Trial',
-    address: '',
+    password: '',
+    role: 'Client',
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchClients = async () => {
+  const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/clients', {
+      const response = await fetch('http://localhost:5000/api/auth/users', {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
@@ -53,9 +43,9 @@ const Clients: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setClients(data.data);
+        setUsers(data.data);
       } else {
-        setError(data.error || 'Failed to fetch clients. Please log in.');
+        setError(data.error || 'Failed to fetch users. Please log in.');
       }
     } catch (err) {
       setError('Error connecting to the server');
@@ -65,11 +55,11 @@ const Clients: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchClients();
+    fetchUsers();
   }, []);
 
   const handleOpenModal = () => {
-    setFormData({ name: '', email: '', company: '', contactNumber: '', planType: 'Basic', subscriptionStatus: 'Trial', address: '' });
+    setFormData({ name: '', email: '', password: '', role: 'Client' });
     setFormError(null);
     setFormSuccess(null);
     setShowModal(true);
@@ -88,15 +78,19 @@ const Clients: React.FC = () => {
     setFormError(null);
     setFormSuccess(null);
 
-    if (!formData.name || !formData.email || !formData.company || !formData.contactNumber) {
-      setFormError('Name, Email, Company, and Contact Number are required.');
+    if (!formData.name || !formData.email || !formData.password) {
+      setFormError('All fields are required.');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setFormError('Password must be at least 6 characters.');
       return;
     }
 
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/clients', {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,48 +102,18 @@ const Clients: React.FC = () => {
 
       if (data.success) {
         setFormSuccess(`Client "${formData.name}" was added successfully!`);
-        await fetchClients(); // Refresh the table
+        await fetchUsers(); // Refresh the table
         setTimeout(() => {
           setShowModal(false);
           setFormSuccess(null);
         }, 1500);
       } else {
-        setFormError(data.error || 'Failed to create client. The email may already exist.');
+        setFormError(data.error || 'Failed to create client. The email may already be registered.');
       }
     } catch (err) {
       setFormError('Error connecting to the server. Please try again.');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active': return 'bg-green-100 text-green-700';
-      case 'Inactive': return 'bg-gray-100 text-gray-600';
-      case 'Suspended': return 'bg-red-100 text-red-700';
-      case 'Trial': return 'bg-yellow-100 text-yellow-700';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  const getStatusDot = (status: string) => {
-    switch (status) {
-      case 'Active': return 'bg-green-500';
-      case 'Inactive': return 'bg-gray-400';
-      case 'Suspended': return 'bg-red-500';
-      case 'Trial': return 'bg-yellow-500';
-      default: return 'bg-gray-400';
-    }
-  };
-
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'Enterprise': return 'bg-purple-100 text-purple-700';
-      case 'Premium': return 'bg-blue-100 text-blue-700';
-      case 'Standard': return 'bg-cyan-100 text-cyan-700';
-      case 'Basic': return 'bg-gray-100 text-gray-600';
-      default: return 'bg-gray-100 text-gray-600';
     }
   };
 
@@ -176,7 +140,7 @@ const Clients: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Clients</h1>
-          <p className="text-gray-500 mt-1">{clients.length} registered client{clients.length !== 1 ? 's' : ''}</p>
+          <p className="text-gray-500 mt-1">{users.length} registered client{users.length !== 1 ? 's' : ''}</p>
         </div>
         <button
           id="add-client-btn"
@@ -198,17 +162,15 @@ const Clients: React.FC = () => {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Plan</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined Date</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {clients.length === 0 ? (
+              {users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center text-gray-400">
+                  <td colSpan={5} className="px-6 py-16 text-center text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -217,32 +179,34 @@ const Clients: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                clients.map((client) => (
-                  <tr key={client._id} className="hover:bg-blue-50 transition-colors duration-150">
+                users.map((user) => (
+                  <tr key={user._id} className="hover:bg-blue-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
-                          {client.name.charAt(0)}
+                          {user.name.charAt(0)}
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">{client.name}</span>
+                        <span className="text-sm font-semibold text-gray-900">{user.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{client.company}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.contactNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${getPlanColor(client.planType)}`}>
-                        {client.planType}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(client.subscriptionStatus)}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${getStatusDot(client.subscriptionStatus)}`}></span>
-                        {client.subscriptionStatus}
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
+                        user.role === 'Technician' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {user.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(client.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      {new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                        Active
+                      </span>
                     </td>
                   </tr>
                 ))
@@ -289,7 +253,7 @@ const Clients: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
 
               {/* Success message */}
               {formSuccess && (
@@ -345,92 +309,39 @@ const Clients: React.FC = () => {
                 />
               </div>
 
-              {/* Company */}
+              {/* Password */}
               <div>
-                <label htmlFor="client-company" className="block text-sm font-medium text-gray-700 mb-1">
-                  Company <span className="text-red-500">*</span>
+                <label htmlFor="client-password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="client-company"
-                  type="text"
-                  name="company"
-                  placeholder="e.g. Tech Corp"
-                  value={formData.company}
+                  id="client-password"
+                  type="password"
+                  name="password"
+                  placeholder="Min. 6 characters"
+                  value={formData.password}
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
               </div>
 
-              {/* Contact Number */}
+              {/* Role */}
               <div>
-                <label htmlFor="client-contact" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="client-contact"
-                  type="text"
-                  name="contactNumber"
-                  placeholder="e.g. 1234567890"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
-              </div>
-
-              {/* Plan Type */}
-              <div>
-                <label htmlFor="client-plan" className="block text-sm font-medium text-gray-700 mb-1">
-                  Plan Type
+                <label htmlFor="client-role" className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
                 </label>
                 <select
-                  id="client-plan"
-                  name="planType"
-                  value={formData.planType}
+                  id="client-role"
+                  name="role"
+                  value={formData.role}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
                 >
-                  <option value="Basic">Basic</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Premium">Premium</option>
-                  <option value="Enterprise">Enterprise</option>
+                  <option value="Client">Client</option>
+                  <option value="Technician">Technician</option>
+                  <option value="Admin">Admin</option>
                 </select>
-              </div>
-
-              {/* Subscription Status */}
-              <div>
-                <label htmlFor="client-status" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subscription Status
-                </label>
-                <select
-                  id="client-status"
-                  name="subscriptionStatus"
-                  value={formData.subscriptionStatus}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
-                >
-                  <option value="Trial">Trial</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Suspended">Suspended</option>
-                </select>
-              </div>
-
-              {/* Address */}
-              <div>
-                <label htmlFor="client-address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <input
-                  id="client-address"
-                  type="text"
-                  name="address"
-                  placeholder="e.g. 123 Main Street, Mumbai"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                />
               </div>
 
               {/* Modal Footer */}
